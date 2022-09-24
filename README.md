@@ -435,3 +435,78 @@ sleep存在异常InterruptedException;
 sleep时间达到后线程进入就绪状态；
 sleep可以模拟网络延时，倒计时等。
 每一个对象都有一个锁， sleep不会释放锁；
+
+**线程礼让**
+
+代码：
+
+```java
+package com.zhk.state;
+
+/**
+ * 测试礼让线程
+ * 礼让不一定成功，看CPU心情
+ */
+public class TestYield {
+    public static void main(String[] args) {
+        MyYield myYield = new MyYield();
+
+        new Thread(myYield,"A线程").start();
+        new Thread(myYield,"B线程").start();
+    }
+}
+
+class MyYield implements Runnable{
+
+    @Override
+    public void run() {
+        System.out.println(Thread.currentThread().getName()+"线程开始执行");
+        Thread.yield();
+        System.out.println(Thread.currentThread().getName()+"线程结束执行");
+    }
+}
+```
+
+![image-20220924195218830](./imgs/image-20220924195218830.png)
+
+**线程插队**
+
+代码：
+
+```java
+package com.zhk.state;
+
+/**
+ * 测试jion方法、、想象为插队
+ */
+public class TestJoin implements Runnable{
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            System.out.println("线程VIP来了");
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        TestJoin testJoin = new TestJoin();
+        Thread thread = new Thread(testJoin);
+        thread.start();
+
+        //主线程
+        for (int i = 0; i < 1000; i++) {
+            if (i==200){
+                thread.join();//插队
+            }
+            System.out.println("main"+i);
+        }
+    }
+}
+```
+
+结果：
+
+![image-20220924200810366](./imgs/image-20220924200810366.png)
+
+**守护线程**
+
+![image-20220924201739681](./imgs/image-20220924201739681.png)
