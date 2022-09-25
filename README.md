@@ -521,3 +521,7 @@ public class TestJoin implements Runnable{
 
 ![image-20220924203209838](./imgs/image-20220924203209838.png)
 
+- 队列和锁保证线程同步的安全性
+- 线程同步
+
+![image-20220925082824885](E:\GitHub仓库同步\MultiThread\imgs\image-20220925082824885.png)
