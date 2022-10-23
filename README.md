@@ -521,7 +521,111 @@ public class TestJoin implements Runnable{
 
 ![image-20220924203209838](./imgs/image-20220924203209838.png)
 
-- 队列和锁保证线程同步的安全性
+- 队列和锁保证**线程同步的安全性**
 - 线程同步
 
-![image-20220925082824885](E:\GitHub仓库同步\MultiThread\imgs\image-20220925082824885.png)
+![image-20220925082824885](./imgs/image-20220925082824885.png)
+
+**同步方法**
+
+![image-20221023105249909](./imgs/image-20221023105249909.png)
+
+同步方法会影响效率：
+
+![image-20221023111917392](./imgs/image-20221023111917392.png)
+
+因此引出了同步块
+
+![image-20221023112004179](./imgs/image-20221023112004179.png)
+
+在银行取钱的例子中，我们发现如果在run方法前加synchronized，发现仍然发生了多个对象抢占一个资源的问题。
+
+```java
+public synchronized void run() {
+    //判断有没有钱
+    if (account.money-drawingMoney<0){
+        System.out.println(Thread.currentThread().getName()+"钱不够");
+        return;
+    }
+    try {
+        Thread.sleep(1000);
+    } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+    }
+    account.money = account.money - drawingMoney;
+    nowMoney = nowMoney + drawingMoney;
+
+    System.out.println(account.name+"余额为："+account.money);
+    System.out.println(this.getName()+"手里的钱："+nowMoney);
+}
+```
+
+输出结果：
+
+```
+结婚基金余额为：-50
+结婚基金余额为：-50
+girlFriend手里的钱：100
+你手里的钱：50
+```
+
+原因是：`synchronized方法 默认锁的是this 可以发现这个加了synchronized锁不了，因为我们实际操作的对象是银行账户啊！所以需要synchronized块（同步块）.`
+
+因此需要需要synchronized块，修改的代码为：
+
+synchronized块（同步块）可以锁任何对象。
+
+```java
+public synchronized void run() {
+	//锁的对象就是变化的量，增删改
+    synchronized (account) {
+        //判断有没有钱
+        if (account.money-drawingMoney<0){
+            System.out.println(Thread.currentThread().getName()+"钱不够");
+            return;
+        }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        account.money = account.money - drawingMoney;
+        nowMoney = nowMoney + drawingMoney;
+
+        System.out.println(account.name+"余额为："+account.money);
+        System.out.println(this.getName()+"手里的钱："+nowMoney);
+    }
+
+}
+```
+
+此时输出结果正常：
+
+```
+结婚基金余额为：50
+你手里的钱：50
+girlFriend钱不够
+```
+
+同时concurrent包下面的CopyOnWriteArrayList是线程安全的，不用加synchronized块即可保证安全性。
+
+```java
+public static void main(String[] args) {
+        //CopyOnWriteArrayList线程安全的
+        CopyOnWriteArrayList<String> list = new CopyOnWriteArrayList<>();
+        for (int i = 0; i < 10000; i++) {
+            new Thread(()->{
+                list.add(Thread.currentThread().getName());
+            }).start();
+        }
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println(list.size());
+    }
+```
+
+## 06死锁
+

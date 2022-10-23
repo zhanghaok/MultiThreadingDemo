@@ -6,7 +6,7 @@ package com.zhk.syn;
  */
 public class UnsafeBank {
     public static void main(String[] args) {
-        Account account = new Account(100,"结婚基金");
+        Account account = new Account(1000,"结婚基金");
 
 
         Drawing you = new Drawing(account,50,"你");
@@ -40,23 +40,27 @@ class Drawing extends Thread{
         this.drawingMoney = drawingMoney;
     }
 
+    //synchronized 默认锁的是this 可以发现这个加了synchronized锁不了，因为我们实际操作的对象是银行账户啊！所以需要synchronized块（同步块）
     @Override
-    public void run() {
-        //判断有没有钱
-        if (account.money-drawingMoney<0){
-            System.out.println(Thread.currentThread().getName()+"钱不够");
-            return;
-        }
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        account.money = account.money - drawingMoney;
-        nowMoney = nowMoney + drawingMoney;
+    public synchronized void run() {
+        //锁的对象就是变化的量，增删改
+        synchronized (account) {
+            //判断有没有钱
+            if (account.money-drawingMoney<0){
+                System.out.println(Thread.currentThread().getName()+"钱不够");
+                return;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            account.money = account.money - drawingMoney;
+            nowMoney = nowMoney + drawingMoney;
 
-        System.out.println(account.name+"余额为："+account.money);
-        System.out.println(this.getName()+"手里的钱："+nowMoney);
+            System.out.println(account.name+"余额为："+account.money);
+            System.out.println(this.getName()+"手里的钱："+nowMoney);
+        }
 
     }
 }
