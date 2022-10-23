@@ -2,11 +2,16 @@
 
 > 课程链接：https://www.bilibili.com/video/BV1V4411p7EF?p=1&vd_source=b67ce643ed65f6136a48fb03481df142
 
-
-
-多线程demo
-
-## 01线程简介
+- [Multithreading](#multithreading)
+  - [01线程简介](#01线程简介)
+  - [02 线程的创建](#02-线程的创建)
+  - [03多线程--静态代理](#03多线程--静态代理)
+  - [04线程状态（五大状态）](#04线程状态五大状态)
+  - [05线程同步](#05线程同步)
+  - [06死锁](#06死锁)
+  - [07 Lock锁](#07-lock锁)
+  - [08线程协作](#08线程协作)
+##  01线程简介
 
 任务，进程，线程，多线程
 
@@ -36,7 +41,7 @@
 
 ![image-20220924134940467](./imgs/image-20220924134940467.png)
 
-## 02 线程的创建
+##  02 线程的创建
 
 main线程，gc线程
 
@@ -303,7 +308,7 @@ public class Race implements Runnable{
 }
 ```
 
-## 03多线程--静态代理
+##  03多线程--静态代理
 
 ![image-20220924171600575](./imgs/image-20220924171600575.png)
 
@@ -372,7 +377,7 @@ class WeddingCompany implements Marry{
 }
 ```
 
-## 04线程状态（五大状态）
+##  04线程状态（五大状态）
 
 ![image-20220924174021753](./imgs/image-20220924174021753.png)
 
@@ -511,7 +516,7 @@ public class TestJoin implements Runnable{
 
 ![image-20220924201739681](./imgs/image-20220924201739681.png)
 
-## 05线程同步
+##  05线程同步
 
 多个线程操作同一个资源
 
@@ -627,7 +632,7 @@ public static void main(String[] args) {
     }
 ```
 
-## 06死锁
+##  06死锁
 
 多个线程各自占有一些共享资源,，并且互相等待其他线程占有的资源才能运行， 而导致两个或者多个线程都在等待对方释放资源, 都停止执行的情形 。**某一个同步块同时拥有 “两个以上对象的锁 " 时，就可能会发生 “死锁” 的问题。**
 
@@ -749,7 +754,7 @@ class Makeup extends Thread{
 
 上面列出了死锁的四个必要条件，我们只要想办法破其中的任意一个或多个条件 就可以避免死锁发生。
 
-## 07 Lock锁
+##  07 Lock锁
 
 - 从JDK 5.0开始，Java提供了面强大的线程同步机制-----通过显式定义同步锁对象来实现同步。同步锁使用Lock对象充当。
 - java.util.concurrent.locks.Lock接口是控制多个线程对共享资源进行访问的工具。 锁提供了对共享资源的独占访问，每次只能有一个线程对Lock对象加锁，线程开始访问共享资源之前应先获得Lock对象。
@@ -832,3 +837,228 @@ class TestLock2 implements Runnable{
 - 使用Lock锁，JVM将花费较少的时间来调度线程，性能更好。并且具有更好的扩展性（提供更多的子类)
 - 优先使用顺序: 
   - Lock > 同步代码块 (已经进入了方法体，分配了相应资源) > 同步方法 (在方法体之外)
+
+##  08线程协作
+
+> 生产者消费者问题
+
+应用场景 : 生产者和消费者问题
+
+- 假设仓库中只能存放一件产品, 生产者将生产出来的产品放入仓库, 消费者将 仓库中产品取走消费 。
+- 如果仓库中没有产品, 则生产者将产品放入仓库, 否则停止生产并等待, 直到 仓库中的产品被消费者取走为止 。
+- 如果仓库中放有产品, 则消费者可以将产品取走消费, 否则停止消费并等待, 直到仓库中再次放入产品为止 。
+
+分析：
+
+这是一个线程同步问题, 生产者和消费者共享同一个资源, 并且生产者和消费者之 间相互依赖，互为条件。
+- 对于生产者, 没有生产产品之前, 要通知消费者等待 . 而生产了产品之后, 又 需要马上通知消费者消费。
+- 对于消费者, 在消费之后, 要通知生产者已经结束消费, 需要生产新的产品 以供消费。
+- 在生产者消费者问题中, 仅有synchronized是不够的
+  - synchronized 可阻止并发更新同一个共享资源, 实现了同步。
+  - synchronized 不能用来实现不同线程之间的消息传递 (通信)。
+
+![image-20221023170628773](./imgs/image-20221023170628773.png)
+
+**解决方式1**
+
+通过缓冲区
+
+![image-20221023170824696](./imgs/image-20221023170824696.png)
+
+代码案例：
+
+```java
+package com.zhk.commniciation;
+
+//测试 生产者消费者问题--> 利用缓冲区解决（管程法）
+
+//生产者、消费者、产品、缓冲区
+
+public class TestPC {
+    public static void main(String[] args) {
+        Container container = new Container();
+
+        new Productor(container).start();
+        new Consumer(container).start();
+    }
+}
+
+//生产者
+class Productor extends Thread{
+    Container container;
+    public Productor(Container container){
+        this.container = container;
+    }
+
+    //生产产品
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            System.out.println("生产了-->"+i+"只鸡");
+            container.push(new Chicken(i));
+        }
+    }
+}
+//消费者
+class Consumer extends Thread{
+    Container container;
+    public Consumer(Container container){
+        this.container = container;
+    }
+
+    //消费产品
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            System.out.println("消费了-->"+container.pop().id+"只鸡");
+        }
+    }
+}
+class Chicken{
+    int id;//产品编号
+
+    public Chicken(int id) {
+        this.id = id;
+    }
+}
+
+class Container{
+    //需要一个容器大小
+    Chicken[] chickens = new Chicken[10];
+    //容器计数器
+    int counter = 0;
+
+    //生产者生产产品
+    public synchronized void push(Chicken chicken){
+        //如果容器满了，就需要等待消费者消费
+        if (counter==chickens.length){
+            //生产等待
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        //如果没有满，我们就需要丢入产品
+        chickens[counter] = chicken;
+        counter++;
+
+        //可以通知消费者消费了
+        this.notifyAll();
+    }
+
+    //消费者消费产品
+    public synchronized Chicken pop(){
+        //判断能否消费
+        if (counter==0){
+            //等待生产者生产，消费者消费
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        //如果可消费
+        counter--;
+        Chicken chicken = chickens[counter];
+
+        //吃完了，通知生产者生产
+        this.notifyAll();
+        return chicken;
+    }
+
+}
+```
+
+**解决方式2**
+
+信号灯法--通过一个标志位
+
+![image-20221023171003694](./imgs/image-20221023171003694.png)
+
+```java
+package com.zhk.commniciation;
+
+//测试生产者消费者问题--> 利用标志位解决（信号灯法）
+public class TestPC2 {
+    public static void main(String[] args) {
+        TV tv = new TV();
+        new Player(tv).start();
+        new Watcher(tv).start();
+    }
+}
+
+//生产者--》演员
+class Player extends Thread{
+    TV tv;
+    public Player(TV tv){
+        this.tv = tv;
+    }
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 20; i++) {
+            if (i%2==0){
+                this.tv.play("快乐大本营播放中");
+            } else {
+                this.tv.play("抖音：记录美好生活");
+            }
+        }
+    }
+}
+//消费者==》观众
+class Watcher extends Thread{
+    TV tv;
+    public Watcher(TV tv){
+        this.tv = tv;
+    }
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 20; i++) {
+            this.tv.watch();
+        }
+    }
+}
+//产品（资源）==》节目
+class TV{
+    //演员表演，观众等待 true
+    //观众观看，演员等待 false
+    String voice;//表演的节目
+    boolean flag = true;//什么时候演员表演，什么时候观众观看
+
+    //表演
+    public synchronized void play(String voice){
+        if (!flag){//演员等待
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        System.out.println("演员表演了："+voice);
+        //通知观众观看
+        this.notifyAll();
+        this.voice = voice;
+        this.flag=!flag;
+    }
+    //观看
+    public synchronized void watch(){
+        if (flag){//观众等待
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        System.out.println("观众观看了："+voice);
+        //通知演员表演
+        this.notifyAll();
+        this.flag=!flag;
+    }
+}
+```
+
+结果：演员表演啥，观众看啥，一一对应
+
+![image-20221023185813427](./imgs/image-20221023185813427.png)
