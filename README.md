@@ -11,6 +11,8 @@
   - [06死锁](#06死锁)
   - [07 Lock锁](#07-lock锁)
   - [08线程协作](#08线程协作)
+  - [09线程池](#09线程池)
+  - [10总结](#10总结)
 ##  01线程简介
 
 任务，进程，线程，多线程
@@ -1062,3 +1064,94 @@ class TV{
 结果：演员表演啥，观众看啥，一一对应
 
 ![image-20221023185813427](./imgs/image-20221023185813427.png)
+
+## 09线程池
+
+![image-20221023191429178](./imgs/image-20221023191429178.png)
+
+![image-20221023191627903](./imgs/image-20221023191627903.png)
+
+```java
+package com.zhk.threadpool;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+//测试线程池
+public class TestPool {
+    public static void main(String[] args) {
+        //1.创建一个线程池
+        //newFixedThreadPool 参数为：线程池大小
+        ExecutorService service = Executors.newFixedThreadPool(10);
+        //执行
+        service.execute(new MyThread());
+        service.execute(new MyThread());
+        service.execute(new MyThread());
+        service.execute(new MyThread());
+
+        //2.关闭连接
+        service.shutdown();
+    }
+}
+
+class MyThread implements Runnable{
+    @Override
+    public void run() {
+        System.out.println(Thread.currentThread().getName());
+    }
+}
+```
+
+![image-20221023192435568](./imgs/image-20221023192435568.png)
+
+## 10总结
+
+```java
+//回顾总结线程的创建
+public class Summary {
+    public static void main(String[] args) {
+
+        new MyThread1().start();
+
+        new Thread(new MyThread2()).start();
+
+        FutureTask<Integer> futureTask = new FutureTask<>(new MyThread3());
+        new Thread(futureTask).start();
+        try {
+            Integer res = futureTask.get();
+            System.out.println(res);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+//1.集成Thread类
+class MyThread1 extends Thread{
+    @Override
+    public void run() {
+        System.out.println("MyThread1");
+    }
+}
+
+//2.实现Runnable接口
+class MyThread2 implements Runnable{
+    @Override
+    public void run() {
+        System.out.println("MyThread2");
+    }
+}
+
+//3.实现Callable接口
+class MyThread3 implements Callable{
+
+    @Override
+    public Integer call() throws Exception {
+        System.out.println("MyThread3");
+        return 100;
+    }
+}
+```
+
+![image-20221023193255150](./imgs/image-20221023193255150.png)
